@@ -4,14 +4,40 @@ import { useState } from 'react';
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    
+    const [error, setError] = useState('');
+
     const handleSignIn = () =>  {
 
     }
 
-    const handleLogIn = () => {
-        
+    const handleLogIn = async () => {
+        setError('');
+    try {
+        const url = "http://localhost:3000/api/auth/login";
+
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email, password }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.log(data.error);
+            setError(data.error || 'Login Failed');
+            return;
+        }
+
+        // console.log(data.token);
+        setError('');
+        localStorage.setItem('token', data.token);
+    } catch (error) {
+        console.error("Login failed:", error);
     }
+};
 
     return(
         <div className="bg-black  text-white min-h-screen flex items-center justify-center px-4">
@@ -36,9 +62,15 @@ function Login() {
                         <input value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 outline-none focus:border-blue-500" type="password" placeholder='Enter your password'/>
                     </div>
 
-                    <button type="submit" onClick={handleLogIn} className='text-center w-full bg-blue-500 rounded-2xl font-medium' >Sign in </button>
+                    {error && (
+                        <p className='text-sm text-red-500'>
+                            {error}
+                        </p>
+                    )}
 
-                    <button type='submit' onClick={handleSignIn}> Don't have an account? Create one </button>
+                    <button type="button" onClick={handleLogIn} className='text-center w-full bg-blue-500 rounded-2xl font-medium' >Sign in </button>
+
+                    <button type='button' onClick={handleSignIn}> Don't have an account? Create one </button>
                 </div>
 
             </div>
