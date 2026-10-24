@@ -1,16 +1,14 @@
 import vault  from '../assets/vault.png'
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
-    const handleSignIn = () =>  {
-
-    }
-
-    const handleLogIn = async () => {
+    const handleLogIn = async (e) => {
+        e.preventDefault();
         setError('');
     try {
         const url = "http://localhost:3000/api/auth/login";
@@ -67,10 +65,20 @@ function Login() {
                             {error}
                         </p>
                     )}
+                    <form onClick={handleLogIn}>
+                    <button type="submit" className='text-center w-full bg-blue-500 rounded-2xl font-medium' >Sign in </button>
+                    </form>
 
-                    <button type="button" onClick={handleLogIn} className='text-center w-full bg-blue-500 rounded-2xl font-medium' >Sign in </button>
+                    <p className="text-center text-sm text-gray-400">
+                        Don't have an account?{' '}
+                        <Link
+                            to="/register"
+                            className="font-medium text-blue-400 hover:text-blue-300"
+                        >
+                            Create account
+                        </Link>
+                    </p>
 
-                    <button type='button' onClick={handleSignIn}> Don't have an account? Create one </button>
                 </div>
 
             </div>
