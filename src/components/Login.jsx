@@ -65,8 +65,9 @@ function Login() {
                             {error}
                         </p>
                     )}
+                    
                     <form onClick={handleLogIn}>
-                    <button type="submit" className='text-center w-full bg-blue-500 rounded-2xl font-medium' >Sign in </button>
+                    <button type="submit" className='cursor-pointer text-center w-full bg-blue-500 rounded-2xl font-medium' >Sign in </button>
                     </form>
 
                     <p className="text-center text-sm text-gray-400">
