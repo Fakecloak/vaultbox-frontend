@@ -1,11 +1,14 @@
 import vault  from '../assets/vault.png'
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+
+    const location = useLocation();
+    const successMessage = location.state?.message;
 
     const handleLogIn = async (e) => {
         e.preventDefault();
@@ -63,6 +66,12 @@ function Login() {
                     {error && (
                         <p className='text-sm text-red-500'>
                             {error}
+                        </p>
+                    )}
+                    
+                    {successMessage && (
+                        <p className="text-sm text-green-400 text-center">
+                            {successMessage}
                         </p>
                     )}
                     

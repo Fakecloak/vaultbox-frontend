@@ -10,9 +10,41 @@ function Register(){
 
     const handleSignUp = async (e) => {
         e.preventDefault();
+        setError('');
+        setLoading(true);
+
+        try{
+        const url = "http://localhost:3000/api/auth/register";
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({email,password}),
+            });
+
+            const data = response.json();
+
+            if(!response.ok){
+                setError(
+                    data.errors?.[0]?.msg || data.error || "Registration Failed"
+                );
+                return;
+            }
+
+            navigate('/login',{
+                message: 'Account created successfully. Please Login.'
+
+            })
+        }catch{
+            setError('Unable to connect to the server. Please try again later.')
+        }finally{
+            setLoading(false);
+        }
 
 
-    }
+    };
 
     return(
         <div className="min-h-screen bg-black text-white flex items-center justify-center px-4 py-8">
