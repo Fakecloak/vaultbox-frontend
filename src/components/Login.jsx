@@ -1,6 +1,6 @@
 import vault  from '../assets/vault.png'
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 function Login() {
     const [email, setEmail] = useState('');
@@ -9,6 +9,8 @@ function Login() {
 
     const location = useLocation();
     const successMessage = location.state?.message;
+
+    const navigate = useNavigate();
 
     const handleLogIn = async (e) => {
         e.preventDefault();
@@ -35,6 +37,7 @@ function Login() {
         // console.log(data.token);
         setError('');
         localStorage.setItem('token', data.token);
+        navigate('/dashboard');
     } catch (error) {
         console.error("Login failed:", error);
     }
