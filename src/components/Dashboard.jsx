@@ -42,7 +42,39 @@ function Dashboard() {
         }finally{
             setUploading(false);
         }
-    }
+    };
+
+    const handleDownload = async( file ) => {
+        try{
+            const token = localStorage.getItem('token');
+
+            const URL = `http://localhost:3000/api/files/${file.id}`;
+
+            const response = await fetch(URL, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+            });
+
+            if(!response.ok){
+                throw new Error('Failed to download file');
+            }
+
+            const blob = await response.blob(); //Convert the response into a Blob
+            const url = window.URL.createObjectURL(blob); //creates a temporary URL pointing to the Blob in browser memory.
+
+            const link = document.createElement('a'); // Create an anchor element
+            link.href = url; // SET THE DOWNLOAD URL
+            link.download = file.filename; // Set the filename for download
+            document.body.appendChild(link); // Add it to the DOM so it can be clicked
+            link.click(); // Simulates a click on the anchor.
+            link.remove();  // Remove the anchor
+
+            window.URL.revokeObjectURL(url); //Release the temporary URL
+        } catch(err){
+            setError(err.message);
+        }
+    };
 
     const fetchFiles = async () => {
         try{
