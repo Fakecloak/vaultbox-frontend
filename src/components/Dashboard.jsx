@@ -181,7 +181,7 @@ function Dashboard() {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`,
                 }, 
-                body: JSON.stringify({ name: folderName.trim() }),
+                body: JSON.stringify({ name: folderName.trim(), parentId: selectedFolder?.id ?? null }),
             });
 
             const data = await response.json();
@@ -252,26 +252,23 @@ function Dashboard() {
                 {activeView === 'folders' && (
                     <section className="mt-8 rounded-xl border border-gray-800 bg-gray-900 p-5">
                         <div className="mb-4 flex items-center gap-3">
-                        {selectedFolder && (
-                            <>
-                            <button
-                                onClick={() => {
-                                setSelectedFolder(null);
-                                fetchFiles();
-                                }}
-                                className="text-blue-400 hover:text-blue-300"
-                            >
-                                ← Back
-                            </button>
-
-                            <h3 className="font-medium">{selectedFolder.name}</h3>
-                            </>
-                        )}
-
-                        {!selectedFolder && <h3 className="font-medium">My Folders</h3>}
+                            {selectedFolder && (
+                                <button
+                                    onClick={() => {
+                                        const parent = folders.find(folder => folder.id === selectedFolder.parentId);
+                                        setSelectedFolder(parent || null);
+                                        fetchFiles(parent?.id ?? null);
+                                    }}
+                                    className="text-blue-400 hover:text-blue-300"
+                                >
+                                    ← Back
+                                </button>
+                            )}
+                            <h3 className="font-medium">{selectedFolder? selectedFolder.name : "My Folders"}</h3>
                         </div>
 
-                        {folders.length === 0 ? (
+                        {folders.filter(
+                            folder => folder.parentId === (selectedFolder?.id ?? null)).length === 0 ? (
                         <p className="text-sm text-gray-400">No folders yet.</p>
                         ) : (
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
