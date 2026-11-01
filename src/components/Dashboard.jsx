@@ -1,12 +1,16 @@
 import { useEffect, useState, useRef } from "react";
 
 function Dashboard() {
+    const [activeView, setActiveView] = useState('files');
+
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [files, setFiles] = useState('');
+    const [files, setFiles] = useState([]);
+    const [folders, setFolders] = useState([]);
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef(null);
+    const [folderName, setFolderName] = useState('');
 
     const handleUpload = async(file)=> {
         if (!file) return;
@@ -132,8 +136,64 @@ function Dashboard() {
         }
     };
 
+    const fetchFolders = async () => {
+        try{
+            const token = localStorage.getItem('token');
+
+            const URL = 'http://localhost:3000/api/folders';
+
+            const response = await fetch(URL, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                }
+            });
+
+            const data = await response.json();
+
+            if(!response.ok){
+                throw new Error(data.error || 'Failed to load folders');
+            }
+
+            setFolders(data.folders);
+        } catch(err){
+            setError(err.message);
+        }
+    };
+
+    const handleCreateFolder = async() => {
+
+        if(!folderName || !folderName.trim()) return;
+
+        try{
+            const token = localStorage.getItem('token');
+
+            const URL = 'http://localhost:3000/api/folders';
+
+            const response = await fetch(URL, {
+                method: 'POST', 
+                headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+                }, 
+                body: JSON.stringify({ name: folderName.trim() }),
+            });
+
+            const data = await response.json();
+
+            if(!response.ok){
+                throw new Error(data.error || 'Failed to create Folder');
+            }
+
+            await fetchFolders();
+        
+        }catch(err){
+            setError(err.message);
+        }
+    };
+
     useEffect(()=> {
         fetchFiles();
+        fetchFolders();
     }, []);
 
     return (
@@ -144,8 +204,8 @@ function Dashboard() {
                 <h1 className="text-2xl font-bold text-blue-400">VaultBox</h1>
 
                 <nav className="mt-8 space-y-2">
-                    <button className="w-full rounded-lg bg-blue-600 px-4 py-3 text-left font-medium">My Files</button>
-                    <button className="w-full rounded-lg px-4 py-3 text-left text-gray-400 hover:text-white hover:bg-gray-800">Folders</button>
+                    <button className="w-full rounded-lg bg-blue-600 px-4 py-3 text-left font-medium" onClick={() => setActiveView('files') }>My Files</button>
+                    <button className="w-full rounded-lg px-4 py-3 text-left text-gray-400 hover:text-white hover:bg-gray-800" onClick={() => setActiveView('folders') }>Folders</button>
                 </nav>
 
                 <button className="mt-8 w-full rounded-lg border border-gray-700 px-4 py-3 text-gray-300 hover:bg-gray-800" onClick={ () => {localStorage.removeItem('token'); window.location.href = './login';}}>Log out</button>
@@ -159,9 +219,15 @@ function Dashboard() {
                         <p className="mt-1 text-sm text-gray-400">Manage your Files in one place.</p>
                     </div>
 
-                    <button type="button" onClick={ (e) => fileInputRef.current.click() } disabled={uploading} className="rounded-lg bg-blue-600 px-5 py-2 font-medium hover:bg-blue-500">
-                    {uploading ? 'Uploading...' : '+ Upload file'}
-                    </button>   
+                     
+
+                    <div className=" flex gap-3">
+                         <button type="button" onClick={ (e) => fileInputRef.current.click() } disabled={uploading} className="rounded-lg bg-blue-600 px-5 py-2 font-medium hover:bg-blue-500">
+                        {uploading ? 'Uploading...' : '+ Upload file'}
+                        </button> 
+                        <input value={folderName} onChange = {(e)=> setFolderName(e.target.value)} placeholder = "Enter folder name" className="rounded-lg border bg-gray-900 border-gray-700 px-3 py-2" />
+                        <button onClick={handleCreateFolder} className="rounded-lg bg-blue-600 px-5 py-2 font-medium hover:bg-blue-500">Create Folder</button>
+                    </div>
                 </header>
                 
                 <input ref={fileInputRef} type="file" className="hidden" 
@@ -176,46 +242,72 @@ function Dashboard() {
                     <input type="search" className="w-full rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 outline-none focus:border-blue-500" placeholder="Search your files..." value={search} onChange={(e)=> setSearch(e.target.value)} />
                 </div>
 
-                {/* File list placeholder  */}
-                <section className="mt-8 overflow-hidden rounded-xl border border-gray-800 bg-gray-900">
-                    <div className="border-b border-gray-800 px-5 py-4">
-                        <h3 className="font-medium">Recent files</h3>
-                    </div>
+                {/* MyFolder list  */}
+                {activeView === 'folders' && (
+                    <section className="mt-8 rounded-xl border border-gray-800 bg-gray-900 p-5">
+                        <h3 className="mb-4 font-medium">My Folders</h3>
 
-                    { loading ? (
-                        <p className="p-6 text-gray-400"> Loading files... </p>
-                    ): error ? (
-                        <p className="p-6 text-red-400">{error}</p>
-                    ): files.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center px-5 py-16 text-center">
-                            <div className="text-4xl">📁</div>
-
-                            <h3 className="mt-4 font-medium"> No files yet </h3>
-
-                            <p className="mt-2 text-sm text-gray-400">Upload your first file to get started.</p>
-                        </div>
-                        
-                    ): (
-                        <div className="divide-y divide-gray-800">
-                            {files
-                                .filter((file)=>
-                                file.filename.toLowerCase().includes(search.toLowerCase())
-                            ).map((file)=>(
-                                <div key={file.id} className="flex items-center justify-between gap-4 p-4">
-                                    <div className="min-w-0">
-                                        <p className="truncate font-medium">{file.filename}</p>
-                                        <p className="text-sm text-gray-400">{(file.size/1024).toFixed(1)}KB</p>
-                                    </div> 
-                                    
-                                    <div className="flex gap-2">
-                                    <button onClick= { ()=> handleDownload(file)} className="rounded-lg border border-gray-700 px-3 py-2 text-sm hover:bg-gray-800">Download</button>
-                                    <button onClick={() => handleDelete(file.id)} className="rounded-lg border border-red-800 px-3 py-2 text-sm text-red-400 hover:bg-red-950" > Delete </button>
-                                    </div>
+                        {folders.length === 0 ? (
+                            <p className="text-sm text-gray-400">No folders yet.</p>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                            {folders.map((folder) => (
+                                <div
+                                key={folder.id}
+                                className="rounded-lg border border-gray-800 p-4"
+                                >
+                                <div className="text-2xl">📁</div>
+                                <p className="mt-2 truncate text-sm font-medium">{folder.name}</p>
                                 </div>
                             ))}
+                            </div>
+                        )}
+                    </section>
+                )}
+
+                {/* MyFile list  */}
+
+                {activeView === 'files' && (
+                    <section className="mt-8 overflow-hidden rounded-xl border border-gray-800 bg-gray-900">
+                        <div className="border-b border-gray-800 px-5 py-4">
+                            <h3 className="font-medium">Recent files</h3>
                         </div>
-                    )}    
-                </section>
+
+                        { loading ? (
+                            <p className="p-6 text-gray-400"> Loading files... </p>
+                        ): error ? (
+                            <p className="p-6 text-red-400">{error}</p>
+                        ): files.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center px-5 py-16 text-center">
+                                <div className="text-4xl">📁</div>
+
+                                <h3 className="mt-4 font-medium"> No files yet </h3>
+
+                                <p className="mt-2 text-sm text-gray-400">Upload your first file to get started.</p>
+                            </div>
+                            
+                        ): (
+                            <div className="divide-y divide-gray-800">
+                                {files
+                                    .filter((file)=>
+                                    file.filename.toLowerCase().includes(search.toLowerCase())
+                                ).map((file)=>(
+                                    <div key={file.id} className="flex items-center justify-between gap-4 p-4">
+                                        <div className="min-w-0">
+                                            <p className="truncate font-medium">{file.filename}</p>
+                                            <p className="text-sm text-gray-400">{(file.size/1024).toFixed(1)}KB</p>
+                                        </div> 
+                                        
+                                        <div className="flex gap-2">
+                                        <button onClick= { ()=> handleDownload(file)} className="rounded-lg border border-gray-700 px-3 py-2 text-sm hover:bg-gray-800">Download</button>
+                                        <button onClick={() => handleDelete(file.id)} className="rounded-lg border border-red-800 px-3 py-2 text-sm text-red-400 hover:bg-red-950" > Delete </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}    
+                    </section>
+                )}
             </main>
         </div>
     );
