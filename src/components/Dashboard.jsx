@@ -75,6 +75,35 @@ function Dashboard() {
             setError(err.message);
         }
     };
+    
+    const handleDelete = async( fileID ) => {
+        const confirmed = window.confirm('Are you sure you want to delete this file?');
+
+        if(!confirmed) return;
+
+        try{
+            const token = localStorage.getItem('token');
+
+            const URL = `http://localhost:3000/api/files/${fileID}`;
+
+            const response = await fetch(URL, {
+                method: 'DELETE',
+                headers:{
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            const data = await response.json();
+
+            if(!response.ok){
+                throw new Error(data.error || 'Failed to delete file');
+            }
+
+            await fetchFiles();
+        } catch(err){
+            setError(err.message);
+        }
+    };
 
     const fetchFiles = async () => {
         try{
@@ -178,7 +207,10 @@ function Dashboard() {
                                         <p className="text-sm text-gray-400">{(file.size/1024).toFixed(1)}KB</p>
                                     </div> 
                                     
+                                    <div className="flex gap-2">
                                     <button onClick= { ()=> handleDownload(file)} className="rounded-lg border border-gray-700 px-3 py-2 text-sm hover:bg-gray-800">Download</button>
+                                    <button onClick={() => handleDelete(file.id)} className="rounded-lg border border-red-800 px-3 py-2 text-sm text-red-400 hover:bg-red-950" > Delete </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
