@@ -11,6 +11,8 @@ function Dashboard() {
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef(null);
     const [folderName, setFolderName] = useState('');
+    const [selectedFolder, setSelectedFolder] = useState(null);
+
 
     const handleUpload = async(file)=> {
         if (!file) return;
@@ -23,6 +25,10 @@ function Dashboard() {
             const formData = new FormData();
 
             formData.append('file', file);
+            
+            if(selectedFolder){
+                formData.append('folderId', selectedFolder.id);
+            }
 
             const URL = 'http://localhost:3000/api/files/upload';
 
@@ -40,7 +46,7 @@ function Dashboard() {
                 throw new Error(data.error || 'Failed to upload File');
             }
 
-            await fetchFiles();
+            await fetchFiles(selectedFolder?.id ?? null);
         } catch(err){
             setError(err.message);
         }finally{
@@ -109,11 +115,11 @@ function Dashboard() {
         }
     };
 
-    const fetchFiles = async () => {
+    const fetchFiles = async (folderId = null) => {
         try{
             const token = localStorage.getItem('token');
 
-            const URL = 'http://localhost:3000/api/files';
+            const URL = `http://localhost:3000/api/files${folderId ? `?folderId=${folderId}` : ''}`;
 
             const response = await fetch(URL, {
                 headers: {
@@ -245,29 +251,55 @@ function Dashboard() {
                 {/* MyFolder list  */}
                 {activeView === 'folders' && (
                     <section className="mt-8 rounded-xl border border-gray-800 bg-gray-900 p-5">
-                        <h3 className="mb-4 font-medium">My Folders</h3>
+                        <div className="mb-4 flex items-center gap-3">
+                        {selectedFolder && (
+                            <>
+                            <button
+                                onClick={() => {
+                                setSelectedFolder(null);
+                                fetchFiles();
+                                }}
+                                className="text-blue-400 hover:text-blue-300"
+                            >
+                                ← Back
+                            </button>
+
+                            <h3 className="font-medium">{selectedFolder.name}</h3>
+                            </>
+                        )}
+
+                        {!selectedFolder && <h3 className="font-medium">My Folders</h3>}
+                        </div>
 
                         {folders.length === 0 ? (
-                            <p className="text-sm text-gray-400">No folders yet.</p>
+                        <p className="text-sm text-gray-400">No folders yet.</p>
                         ) : (
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                            {folders.map((folder) => (
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                            {folders
+                            .filter(folder => folder.parentId === (selectedFolder?.id ?? null))
+                            .map(folder => (
                                 <div
                                 key={folder.id}
-                                className="rounded-lg border border-gray-800 p-4"
+                                onClick={() => {
+                                    setSelectedFolder(folder);
+                                    fetchFiles(folder.id);
+                                }}
+                                className="cursor-pointer rounded-lg border border-gray-800 p-4 hover:border-blue-500 hover:bg-gray-800"
                                 >
                                 <div className="text-2xl">📁</div>
-                                <p className="mt-2 truncate text-sm font-medium">{folder.name}</p>
+                                <p className="mt-2 truncate text-sm font-medium">
+                                    {folder.name}
+                                </p>
                                 </div>
                             ))}
-                            </div>
+                        </div>
                         )}
                     </section>
-                )}
+                    )}
 
                 {/* MyFile list  */}
 
-                {activeView === 'files' && (
+                {(activeView === 'files' || selectedFolder) && ( 
                     <section className="mt-8 overflow-hidden rounded-xl border border-gray-800 bg-gray-900">
                         <div className="border-b border-gray-800 px-5 py-4">
                             <h3 className="font-medium">Recent files</h3>
