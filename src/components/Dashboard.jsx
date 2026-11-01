@@ -1,11 +1,49 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 function Dashboard() {
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [files, setFiles] = useState('');
-    
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef(null);
+
+    const handleUpload = async(file)=> {
+        if (!file) return;
+
+        setUploading(true);
+        setError('');
+
+        try{
+            const token = localStorage.getItem('token');
+            const formData = new FormData();
+
+            formData.append('file', file);
+
+            const URL = 'http://localhost:3000/api/files/upload';
+
+            const response = await fetch(URL, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if(!response.ok){
+                throw new Error(data.error || 'Failed to upload File');
+            }
+
+            await fetchFiles();
+        } catch(err){
+            setError(err.message);
+        }finally{
+            setUploading(false);
+        }
+    }
+
     const fetchFiles = async () => {
         try{
             const token = localStorage.getItem('token');
@@ -23,6 +61,8 @@ function Dashboard() {
             if(!response.ok){
                 throw new Error(data.error || 'Failed to load files');
             }
+            // console.log("API response:", data);
+            // console.log("Files:", data.files);  
             setFiles(data.files);
         }catch(err){
             setError(err.message);
@@ -57,7 +97,18 @@ function Dashboard() {
                         <h2 className="text-2xl font-semibold">My Files</h2>
                         <p className="mt-1 text-sm text-gray-400">Manage your Files in one place.</p>
                     </div>
+
+                    <button type="button" onClick={ (e) => fileInputRef.current.click() } disabled={uploading} className="rounded-lg bg-blue-600 px-5 py-2 font-medium hover:bg-blue-500">
+                    {uploading ? 'Uploading...' : '+ Upload file'}
+                    </button>   
                 </header>
+                
+                <input ref={fileInputRef} type="file" className="hidden" 
+                onChange={ (e) => {
+                    handleUpload(e.target.files[0]);
+                    e.target.value = ''; 
+                } }  
+                />
 
                 {/* search  */}
                 <div>
@@ -97,8 +148,7 @@ function Dashboard() {
                                 </div>
                             ))}
                         </div>
-                    )}
-                    
+                    )}    
                 </section>
             </main>
         </div>
