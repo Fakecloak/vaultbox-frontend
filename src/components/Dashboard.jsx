@@ -196,6 +196,17 @@ function Dashboard() {
             setError(err.message);
         }
     };
+    
+    const getBreadcrumbs = () => {
+        const breadcrumbs = [];
+        let current = selectedFolder;
+
+        while(current){
+            breadcrumbs.unshift(current);
+            current = folders.find(folder => folder.id === current.parentId);
+        }
+        return breadcrumbs;
+    };
 
     useEffect(()=> {
         fetchFiles();
@@ -251,22 +262,32 @@ function Dashboard() {
                 {/* MyFolder list  */}
                 {activeView === 'folders' && (
                     <section className="mt-8 rounded-xl border border-gray-800 bg-gray-900 p-5">
-                        <div className="mb-4 flex items-center gap-3">
-                            {selectedFolder && (
-                                <button
-                                    onClick={() => {
-                                        const parent = folders.find(folder => folder.id === selectedFolder.parentId);
-                                        setSelectedFolder(parent || null);
-                                        fetchFiles(parent?.id ?? null);
-                                    }}
-                                    className="text-blue-400 hover:text-blue-300"
-                                >
-                                    ← Back
-                                </button>
-                            )}
-                            <h3 className="font-medium">{selectedFolder? selectedFolder.name : "My Folders"}</h3>
-                        </div>
+                        
+                        {/* Breadcrumb navigation */}
+                        <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+                            <button onClick = { () => {
+                                setSelectedFolder(null);
+                                fetchFiles(); 
+                            }} 
+                            className= "text-blue-400 hover:text-blue-300">Folders
+                            </button>
 
+                            {getBreadcrumbs().map((folder, index) =>(
+                                <div key={folder.id} className="flex items-center gap-2">
+                                    <span className="text-gray-500">/</span>
+                                    <button onClick= { () => {
+                                        setSelectedFolder(folder);
+                                        fetchFiles(folder.id);
+                                    }}
+                                    className={index === getBreadcrumbs().length -1 ? "font-semibold text-white" : "text-blue-400 hover:text-blue-300"}
+                                    >
+                                        {folder.name}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        {/* Folder list */}
                         {folders.filter(
                             folder => folder.parentId === (selectedFolder?.id ?? null)).length === 0 ? (
                         <p className="text-sm text-gray-400">No folders yet.</p>
