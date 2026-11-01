@@ -176,7 +176,9 @@ function Dashboard() {
                                     <div className="min-w-0">
                                         <p className="truncate font-medium">{file.filename}</p>
                                         <p className="text-sm text-gray-400">{(file.size/1024).toFixed(1)}KB</p>
-                                    </div>
+                                    </div> 
+                                    
+                                    <button onClick= { ()=> handleDownload(file)} className="rounded-lg border border-gray-700 px-3 py-2 text-sm hover:bg-gray-800">Download</button>
                                 </div>
                             ))}
                         </div>
